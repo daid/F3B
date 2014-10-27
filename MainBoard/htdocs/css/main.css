@@ -1,0 +1,55 @@
+body{
+	font: 100.0% "Trebuchet MS", sans-serif;
+	margin: 25px;
+}
+h1 {
+	margin-top: 0.1em;
+}
+.demoHeaders {
+	margin-top: 2em;
+}
+#dialog-link {
+	padding: .4em 1em .4em 20px;
+	text-decoration: none;
+	position: relative;
+}
+#dialog-link span.ui-icon {
+	margin: 0 5px 0 0;
+	position: absolute;
+	left: .2em;
+	top: 50%;
+	margin-top: -8px;
+}
+#icons {
+	margin: 0;
+	padding: 0;
+}
+#icons li {
+	margin: 2px;
+	position: relative;
+	padding: 4px 0;
+	cursor: pointer;
+	float: left;
+	list-style: none;
+}
+#icons span.ui-icon {
+	float: left;
+	margin: 0 4px;
+}
+.box {
+	margin-top: 10px;
+	padding: .7em;
+}
+.clock {
+	margin-top: 10px;
+	padding: .1em;
+	font-size: 5em;
+}
+table {
+	border-collapse: collapse;
+	width: 100%;
+}
+th, td {
+	border: 1px solid #808080;
+	padding: 0.2em 0.4em;
+}

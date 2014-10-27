@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="us">
+<head>
+	<meta charset="utf-8">
+	<title>ALC - F3B</title>
+	<link href="css/jquery-ui.min.css" rel="stylesheet" />
+	<link href="css/main.css" rel="stylesheet" />
+	<script src="js/jquery.js"></script>
+	<script src="js/jquery-ui.min.js"></script>
+	<script src="js/main.js"></script>
+<script>
+function stateReply(text) {
+	setTimeout("$.get('/state', stateReply).fail(stateFailed)", 200);
+	
+	fillDiv($('#main'), text)
+}
+
+function stateFailed()
+{
+	setTimeout("$.get('/state', stateReply).fail(stateFailed)", 2000);
+	
+	var div = $('#main');
+	div.attr('previousState', '')
+	div.empty()
+	div.append($('<div/>').addClass("ui-widget ui-widget-content ui-corner-all ui-state-highlight box").text("Failed to get data..."));
+}
+
+function adminReply(text) {
+	setTimeout("$.get('/adminstate', adminReply).fail(adminFailed)", 1000);
+	
+	fillDiv($('#admin'), text)
+}
+
+function adminFailed()
+{
+	setTimeout("$.get('/adminstate', adminReply).fail(adminFailed)", 2000);
+	
+	var div = $('#admin');
+	div.attr('previousState', '')
+	div.empty()
+	div.append($('<div/>').addClass("ui-widget ui-widget-content ui-corner-all ui-state-highlight box").text("Failed to get data..."));
+}
+
+$(function()
+{
+	stateReply('')
+	adminReply('')
+
+	$("#start_button").button().click(function() { $.get('/button?2'); })
+	$("#reset_button").button().click(function() { $.get('/button?3'); })
+	for(var n=1; n<=6; n++)
+	{
+		$("#rak_a_" + n).button().click(function() { var nr = parseInt($( this ).text()) - 1; $.get('/button?'+(14-nr*2)); })
+		$("#rak_b_" + n).button().click(function() { var nr = parseInt($( this ).text()) - 1; $.get('/button?'+(31-nr*2)); })
+		$("#reset_" + n).button().click(function() { var nr = parseInt($( this ).text()) - 1; $.get('/button?'+(15-nr*2)); })
+	}
+})
+</script>
+</head>
+<body>
+
+<div class="ui-widget ui-widget-content ui-corner-all" style="margin-top: 20px; padding: .7em;">
+
+<h1>F3B - Contest</h1>
+
+<div id="main">
+	<div class="ui-widget ui-widget-content ui-corner-all ui-state-highlight box">
+		Loading...
+	</div>
+</div>
+
+<div id="admin">
+	<div class="ui-widget ui-widget-content ui-corner-all ui-state-highlight box">
+		Loading...
+	</div>
+</div>
+
+<div class="ui-widget ui-widget-content ui-corner-all" style="margin-top: 20px; padding: .7em;" id="main_info">
+	<button id="start_button">Start</button> <button id="reset_button">Reset</button><br/>
+	Rak A: <button id="rak_a_1">1</button> <button id="rak_a_2">2</button> <button id="rak_a_3">3</button> <button id="rak_a_4">4</button> <button id="rak_a_5">5</button> <button id="rak_a_6">6</button><br/>
+	Rak B: <button id="rak_b_1">1</button> <button id="rak_b_2">2</button> <button id="rak_b_3">3</button> <button id="rak_b_4">4</button> <button id="rak_b_5">5</button> <button id="rak_b_6">6</button><br/>
+	Reset: <button id="reset_1">1</button> <button id="reset_2">2</button> <button id="reset_3">3</button> <button id="reset_4">4</button> <button id="reset_5">5</button> <button id="reset_6">6</button>
+</div>
+
+</div>
+
+</body>
+</html>
