@@ -19,6 +19,8 @@
 
 int debugflags;
 
+FILE* logfile;
+
 char curState[1024];
 char curAdminState[1024];
 int tickZero = 0;
@@ -101,19 +103,44 @@ int luaGetTime(lua_State* L)
 
 	return 1;
 }
+
+int luaOpenLog(lua_State* L)
+{
+    char filename[PATH_MAX];
+    sprintf(filename, "logs/%s.log", luaL_checkstring(L, 1));
+	if (logfile)
+    {
+        fclose(logfile);
+        logfile = NULL;
+    }
+    logfile = fopen(filename, "w");
+    return 0;
+}
+
 int luaLog(lua_State* L)
 {
-	time_t t;
-	char timeString[128];
 	const char* str;
 
-    t = time(NULL);
-	strftime(timeString, 128, "%d %b %Y %H:%M:%S", localtime(&t));
 	str = luaL_checkstring(L, 1);
-	//printf("%s: %s\n", timeString, str);
 	int ticks = getTicks();
-	printf("%03d.%03d: %s\n", ticks / 1000, ticks % 1000, str);
+	if (logfile)
+	{
+        printf("%03d.%03d: %s\n", ticks / 1000, ticks % 1000, str);
+        fprintf(logfile, "%03d.%03d: %s\n", ticks / 1000, ticks % 1000, str);
+	}else{
+        printf("??? %03d.%03d: %s\n", ticks / 1000, ticks % 1000, str);
+	}
 	return 0;
+}
+
+int luaCloseLog(lua_State* L)
+{
+    if (logfile)
+    {
+        fclose(logfile);
+        logfile = NULL;
+    }
+    return 0;
 }
 
 int luaSetSignNr(lua_State* L)
@@ -212,7 +239,9 @@ void* luaLoop(void* data)
 
 		luaL_openlibs(L);
 		lua_register(L, "sleep", luaSleep);
+		lua_register(L, "openLog", luaOpenLog);
 		lua_register(L, "log", luaLog);
+		lua_register(L, "closeLog", luaCloseLog);
 		lua_register(L, "getTime", luaGetTime);
 		lua_register(L, "startSignal", luaStartSignal);
 		lua_register(L, "clearButtonEvents", luaClearButtonEvents);
@@ -228,7 +257,7 @@ void* luaLoop(void* data)
 			fprintf(stderr, "%s", lua_tostring(L, -1));
 			lua_pop(L, 1);  /* pop error message from the stack */
 		}
-
+        luaCloseLog(L);
 		lua_close(L);
 	}
 	return NULL;

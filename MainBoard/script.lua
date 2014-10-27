@@ -276,8 +276,8 @@ end
 if gameType == 2 then
 	setClockTime(DISTANCE_WORK_TIME + getTime() - 1, 0);
 	setLedClockTime(DISTANCE_WORK_TIME + getTime() - 1, 0);
-	log("Waiting for start of distance flight");
 	setState("WORKTIME:"..DISTANCE_WORK_TIME.."|TEXT:Wait for flight to start");
+	setAdminState("TEXTENTRY:Distance round X, flight X:Start")
 	--Wait for operator to start the round
 	started = false
 	while not started do
@@ -292,8 +292,21 @@ if gameType == 2 then
 			button, time = getButtonEvent();
 		end
 		action = getWebAction();
-		if action == "Start" then
-			started = true
+		if action ~= nil then
+			local i = string.find(action, "&")
+			local param = ""
+			if i ~= nil then
+				param = string.sub(action, i + 1)
+				param = string.gsub(param, "%%20", "_")
+				param = string.gsub(param, " ", "_")
+				action = string.sub(action, 0, i - 1)
+			end
+			if action == "Start" then
+				if param ~= "" then
+					openLog(param)
+				end
+				started = true
+			end
 		end
 	end
 	
@@ -305,7 +318,7 @@ if gameType == 2 then
 	now = getTime(1);
 	doSignal(-1)
 	start = now;
-	log("Round started");
+	log("Distance flight started");
 	setAdminState("BUTTON:Reset")
 	--playerStatus = {0, 0, 0, 0, 0}; --Reset player status to "landed, wait for B"
 	--[[
@@ -333,54 +346,68 @@ if gameType == 2 then
 				setScoreSign(p, playerLaps[p]);
 				playerStatus[p] = 1
 				doSignal(p);
-				log("Player "..p.." B seen at start");
+				log("Player "..p.." Rak B seen at start");
 			elseif playerStatus[p] == 1 and t == 0 then
 				--Takeoff
 				playerStatus[p] = 2
 				doSignal(p);
-				log("Player "..p.." A seen at start");
+				log("Player "..p.." Rak A seen at start");
 			elseif playerStatus[p] == 2 and t == 0 then
 				--Flying out of the field.
 				playerStatus[p] = 3
 				doSignal(p);
-				log("Player "..p.." A exit field after start");
+				log("Player "..p.." Rak A exit field after start");
 			elseif playerStatus[p] == 3 and t == 0 then
 				--Takeoff
 				playerStatus[p] = 4
 				playerLaps[p] = 0
 				playerStartTime[p] = time
 				doSignal(p);
-				log("Player "..p.." A enter field, start of laps");
+				log("Player "..p.." Rak A enter field, start of laps");
 			elseif playerStatus[p] > 0 and t == 2 then
 				--Restart
 				playerStatus[p] = 0
 				playerStartTime[p] = 0
-				log("Player "..p.." reset");
-			elseif playerStatus[p] == 4 and t == 1 and time < playerStartTime[p] + DISTANCE_FLY_TIME then
-				--Pass at station B
-				playerStatus[p] = 5
-				playerLaps[p] = playerLaps[p] + 1
-				setScoreSign(p, playerLaps[p]);
-				doSignal(p);
-				log("Player "..p.." pass B, lap " .. playerLaps[p]);
-			elseif playerStatus[p] == 5 and t == 0 and time < playerStartTime[p] + DISTANCE_FLY_TIME then
-				--Pass at station A
-				playerStatus[p] = 4
-				playerLaps[p] = playerLaps[p] + 1
-				setScoreSign(p, playerLaps[p]);
-				doSignal(p);
-				log("Player "..p.." pass A, lap " .. playerLaps[p]);
+				log("Player "..p.." relaunch");
+			elseif playerStatus[p] == 4 and t == 1 then
+				if time < playerStartTime[p] + DISTANCE_FLY_TIME then
+					--Pass at station B
+					playerStatus[p] = 5
+					playerLaps[p] = playerLaps[p] + 1
+					setScoreSign(p, playerLaps[p]);
+					doSignal(p);
+					log("Player "..p.." pass B, lap " .. playerLaps[p]);
+				else
+					log("Player "..p.." pass B, but out of flying time");
+				end
+			elseif playerStatus[p] == 5 and t == 0 then
+				if time < playerStartTime[p] + DISTANCE_FLY_TIME then
+					--Pass at station A
+					playerStatus[p] = 4
+					playerLaps[p] = playerLaps[p] + 1
+					setScoreSign(p, playerLaps[p]);
+					doSignal(p);
+					log("Player "..p.." pass A, lap " .. playerLaps[p]);
+				else
+					log("Player "..p.." pass A, but out of flying time");
+				end
 			elseif t == 3 then
 				--reset
-				log("Reset button pressed");
+				log("Global reset button pressed");
 				started = false
+			elseif t == 0 then
+				log("Player "..p.." Rak A pressed, but that's not valid right now.");
+			elseif t == 1 then
+				log("Player "..p.." Rak B pressed, but that's not valid right now.");
+			elseif t == 2 then
+				log("Player "..p.." Reset pressed, but that's not valid right now.");
 			end
 			
 			button, time = getButtonEvent();
 		end
 		action = getWebAction()
 		if action == "Reset" then
-			log("Reset button pressed");
+			log("Reset web button pressed");
 			started = false
 		end
 		
@@ -422,7 +449,7 @@ if gameType == 2 then
 
 	s = "TABLE:Player;Laps"
 	for i = 1, playerCount, 1 do
-		s = s .. "|" .. string.char(i+64) .. ";" .. playerLaps[i]
+		s = s .. ":" .. string.char(i+64) .. ";" .. playerLaps[i]
 	end
 	setState("TEXT:Flight has ended|"..s)
 	
@@ -430,8 +457,12 @@ if gameType == 2 then
 	setClockTime(getTime()-1000);
 	setLedClockTime(getTime()-1000, 0);
 	log("Distance flight end");
+	for i = 1, playerCount, 1 do
+		log("Laps for player " .. i .. ": " .. playerLaps[i]);
+	end
 	getTime(0);
 	doSignal(-2);
+	started = true
 	
 	while started do
 		sleep(100);
@@ -446,6 +477,10 @@ if gameType == 2 then
 			
 			button, time = getButtonEvent();
 		end
+		action = getWebAction()
+		if action == "Reset" then
+			started = false
+		end
 	end
 end
 if gameType == 3 then
@@ -453,7 +488,7 @@ if gameType == 3 then
 		setClockTime(SPEED_WORK_TIME + getTime() - 1, 0);
 		setLedClockTime(SPEED_WORK_TIME + getTime() - 1, 0);
 		setClock60Speed(-1);
-		setState("WORKTIME:"..SPEED_WORK_TIME.."|TEXT:Wait for round to start");
+		setState("WORKTIME:"..SPEED_WORK_TIME.."|TEXT:Wait for start signal");
 		setAdminState("BUTTON:Start")
 		setAdminState("TEXTENTRY:Speed round X, flight X:Start")
 		--Before the 3 minutes work time. Wait for start button.
@@ -478,9 +513,13 @@ if gameType == 3 then
 				if i ~= nil then
 					param = string.sub(action, i + 1)
 					param = string.gsub(param, "%%20", "_")
+					param = string.gsub(param, " ", "_")
 					action = string.sub(action, 0, i - 1)
 				end
 				if action == "Start" then
+					if param ~= "" then
+						openLog(param)
+					end
 					started = true
 				end
 			end
@@ -490,7 +529,7 @@ if gameType == 3 then
 		now = getTime(1);
 		doSignal(-1);
 		start = now;
-		log("Speed round started");
+		log("Speed flight started");
 		setAdminState("BUTTON:Reset")
 		flightStart = -1;
 		lastflighttime = -1;
@@ -505,6 +544,7 @@ if gameType == 3 then
 				if now - speed60Time > 60*1000 then
 					setClock60Speed(0);
 					if state < 10 then
+						log("60 seconds are up")
 						state = 20
 						doSignal(3);
 					end
@@ -517,12 +557,14 @@ if gameType == 3 then
 			sleep(10);
 			action = getWebAction();
 			if action == "Reset" then
+				log("Reset button on website used.")
 				return
 			end
 			button, time = getButtonEvent();
 			while button ~= nil do
 				p, t = resolveButton(button);
 				if t == 3 then
+					log("Reset button pressed.")
 					--global reset
 					return
 				end
@@ -532,6 +574,7 @@ if gameType == 3 then
 						--Station A pressed both
 					if (t == 0 and p == 1) or (t == 0 and p == 2) then
 						--Station A pressed
+						log("Rak A pressed button")
 						event = 1
 						lastEventTime = time
 					end
@@ -539,26 +582,31 @@ if gameType == 3 then
 						--Station B pressed both
 					if (t == 1 and p == 1) or (t == 1 and p == 2) then
 						--Station B pressed
+						log("Rak B pressed button")
 						event = 2
 						lastEventTime = time
 					end
 				end
 				if t == 2 and (p == 1 or p == 2) and (state == 0 or state == 1 or state == 20) then
 					--Relaunch
+					log("Relaunch used (P="..p..", State="..state..")")
 					state = 0;
 					flightStart = -1
 					speed60Time = -1
 				end
 				if p == 5 and speed60Time == -1 and state < 10 then
+					log("60 timer started")
 					speed60Time = now
 				end
 				if state == 0 then
 					if event == 1 then
+						log("Rak A, fly out of field.")
 						doSignal(1);
 						state = 1;
 					end
 				elseif state == 1 then
 					if event == 1 then
+						log("Rak A, fly into field (timing starts)")
 						doSignal(1);
 						speed60Time = -1
 						state = 10;
@@ -567,6 +615,7 @@ if gameType == 3 then
 					end
 				elseif state == 10 then
 					if event == 2 then
+						log("Rak B, 150m")
 						--1x 150m
 						doSignal(1);
 						state = 11;
@@ -574,6 +623,7 @@ if gameType == 3 then
 					end
 				elseif state == 11 then
 					if event == 1 then
+						log("Rak A, 300m")
 						--2x 150m
 						doSignal(1);
 						state = 12;
@@ -581,6 +631,7 @@ if gameType == 3 then
 					end
 				elseif state == 12 then
 					if event == 2 then
+						log("Rak B, 450m")
 						--3x 150m
 						doSignal(1);
 						state = 13;
@@ -591,8 +642,10 @@ if gameType == 3 then
 						--4x 150m
 						setLedClockTimeSpeed(time - flightStart, 1);
 						lastflighttime = time - flightStart;
+						log("Rak A, 600m, time: " .. (time - flightStart))
 						--setLedClockTimeSpeed(lastflighttime, 1);
 						start = getTime(1);
+						log("New working time started")
 						lastEventTime = start;
 						doSignal(1);
 						clearButtonEvents();
