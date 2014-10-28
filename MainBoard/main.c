@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <pthread.h>
+#include <dirent.h>
 
 #ifdef WIN32
 #include <windows.h>
@@ -296,6 +297,37 @@ int httpALC(char* path, char* param, int socket)
 		strcpy(webActionBuffer, param);
 		pthread_mutex_unlock(&webActionMutex);
 		return 1;
+	}
+	if (strcmp(path, "/loglist") == 0)
+	{
+        DIR* dh = opendir("logs");
+        struct dirent *entry;
+        while((entry=readdir(dh))!=NULL)
+        {
+            if (entry->d_name[0] == '.')
+                continue;
+            httpSend(socket, entry->d_name, strlen(entry->d_name));
+            httpSend(socket, "\n", 1);
+        }
+        closedir(dh);
+		return 1;
+	}
+	if (strcmp(path, "/log") == 0)
+	{
+        char filename[PATH_MAX];
+        sprintf(filename, "logs/%s", param);
+        FILE* f = fopen(filename, "rb");
+        if (f)
+        {
+            char buffer[4096];
+            int size;
+            while((size = fread(buffer, 1, sizeof(buffer), f)) > 0)
+            {
+                httpSend(socket, buffer, size);
+            }
+            fclose(f);
+            return 1;
+        }
 	}
 	return 0;
 }

@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="us">
+<head>
+	<meta charset="utf-8">
+	<title>ALC - F3B</title>
+	<link href="css/jquery-ui.min.css" rel="stylesheet" />
+	<link href="css/main.css" rel="stylesheet" />
+	<script src="js/jquery.js"></script>
+	<script src="js/jquery-ui.min.js"></script>
+	<script src="js/main.js"></script>
+<script>
+function logReply(text)
+{
+	var data = text.split("\n");
+	
+	var div = $('#main');
+	div.empty();
+	for(var idx=0; idx<data.length;idx++)
+	{
+		var line = data[idx];
+		var span = $('<span/>').text(line);
+		line = line.toLowerCase();
+		if (line.indexOf('player 1') > -1)
+			span.addClass('player1');
+		if (line.indexOf('player 2') > -1)
+			span.addClass('player2');
+		if (line.indexOf('player 3') > -1)
+			span.addClass('player3');
+		if (line.indexOf('player 4') > -1)
+			span.addClass('player4');
+		if (line.indexOf('player 5') > -1)
+			span.addClass('player5');
+		if (line.indexOf('player 6') > -1)
+			span.addClass('player6');
+		div.append(span);
+		div.append($('<br/>'));
+	}
+}
+
+function loadLog()
+{
+	var filename = $(this).text();
+	$.get('/log?'+filename, logReply);
+}
+
+function logListReply(text)
+{
+	var data = text.split("\n");
+	
+	var div = $('#main');
+	div.empty();
+	for(var idx=0; idx<data.length;idx++)
+	{
+		var filename = data[idx];
+		if (filename != '')
+		{
+			div.append($('<button/>').text(filename).button().click(loadLog));
+			div.append($('<br/>'));
+		}
+	}
+}
+
+$(function()
+{
+	$.get('/loglist', logListReply);
+})
+</script>
+</head>
+<body>
+
+<div class="ui-widget ui-widget-content ui-corner-all" style="margin-top: 20px; padding: .7em;">
+
+<h1>F3B - Contest</h1>
+
+<div id="main">
+	<div class="ui-widget ui-widget-content ui-corner-all ui-state-highlight box">
+		Loading...
+	</div>
+</div>
+
+</div>
+
+</body>
+</html>
