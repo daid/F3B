@@ -7,6 +7,9 @@
 #define MAX_SOCK 32
 #define SOCKET_BUFFER_SIZE 4096
 #define NO_SOCKET 0xffffffff
+#ifndef MAX_PATH
+#define MAX_PATH 2048
+#endif
 
 struct THttpHandlerListItem
 {
@@ -31,11 +34,12 @@ int defaultHandler(char* page, char* param, int sock)
 	char buffer[SOCKET_BUFFER_SIZE];
 	int size;
 	FILE* f;
+	char filename[MAX_PATH];
 	
 	while(page[0] == '/') page++;
 	
-	char filename[MAX_PATH];
 	snprintf(filename, MAX_PATH, "htdocs/%s", page);
+	filename[MAX_PATH - 1] = '\0';
 	if (strcmp(filename, "htdocs/") == 0)
         strcpy(filename, "htdocs/index.html");
     f = fopen(filename, "rb");
@@ -103,9 +107,9 @@ void handleSocket(struct TSocketInfo* si)
 
 void httpSend(int socket, const void* data, int data_len)
 {
+    char buffer[32];
     if (data_len < 1)
         return;
-    char buffer[16];
     sprintf(buffer, "\r\n%x\r\n", data_len);
     send(socket, buffer, strlen(buffer), 0);
     send(socket, data, data_len, 0);

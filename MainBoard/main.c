@@ -121,15 +121,15 @@ int luaOpenLog(lua_State* L)
 int luaLog(lua_State* L)
 {
 	const char* str;
+	int ticks = getTicks();
 
 	str = luaL_checkstring(L, 1);
-	int ticks = getTicks();
 	if (logfile)
 	{
-        printf("%03d.%03d: %s\n", ticks / 1000, ticks % 1000, str);
+        //printf("%03d.%03d: %s\n", ticks / 1000, ticks % 1000, str);
         fprintf(logfile, "%03d.%03d: %s\n", ticks / 1000, ticks % 1000, str);
 	}else{
-        printf("??? %03d.%03d: %s\n", ticks / 1000, ticks % 1000, str);
+        //printf("??? %03d.%03d: %s\n", ticks / 1000, ticks % 1000, str);
 	}
 	return 0;
 }
@@ -294,7 +294,8 @@ int httpALC(char* path, char* param, int socket)
 	if (strcmp(path, "/action") == 0)
 	{
         pthread_mutex_lock(&webActionMutex);
-		strcpy(webActionBuffer, param);
+		strncpy(webActionBuffer, param, 1024);
+		webActionBuffer[1024-1] = '\0';
 		pthread_mutex_unlock(&webActionMutex);
 		return 1;
 	}
@@ -314,9 +315,11 @@ int httpALC(char* path, char* param, int socket)
 	}
 	if (strcmp(path, "/log") == 0)
 	{
+        FILE* f;
         char filename[PATH_MAX];
-        sprintf(filename, "logs/%s", param);
-        FILE* f = fopen(filename, "rb");
+        snprintf(filename, PATH_MAX, "logs/%s", param);
+        filename[PATH_MAX - 1] = '\0';
+        f = fopen(filename, "rb");
         if (f)
         {
             char buffer[4096];
