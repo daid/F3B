@@ -91,21 +91,25 @@ void writeMsg(int ID, int code, char* buffer, int len)
     c = 0x80 | ID;
     bcc += c;
     for(j=0;j<MAX_SERIAL_PORT;j++)
-        write(serialPort[j], &c, 1);
+        if (serialPort[j] != -1)
+            write(serialPort[j], &c, 1);
     c = ((code & 0x03) << 5) | (len & 0x1f);
     bcc += c;
     for(j=0;j<MAX_SERIAL_PORT;j++)
-        write(serialPort[j], &c, 1);
+        if (serialPort[j] != -1)
+            write(serialPort[j], &c, 1);
     if (len > 0)
     {
         for(i=0;i<len;i++)
             bcc += buffer[i];
         for(j=0;j<MAX_SERIAL_PORT;j++)
-            write(serialPort[j], buffer, len);
+            if (serialPort[j] != -1)
+                write(serialPort[j], buffer, len);
     }
     bcc = ~bcc & 0x7f;
     for(j=0;j<MAX_SERIAL_PORT;j++)
-        write(serialPort[j], &bcc, 1);
+        if (serialPort[j] != -1)
+            write(serialPort[j], &bcc, 1);
 }
 
 #define EXPECT_HDR1                    0
