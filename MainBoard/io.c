@@ -275,13 +275,17 @@ void* ioLoop(void* data)
             }
             signIdx++;
         }
-        write(serialPortSigns, buffer, (int)(ptr - buffer));
+        if (serialPortSigns != -1)
+            write(serialPortSigns, buffer, (int)(ptr - buffer));
 
         for(j = 0; j < MAX_SERIAL_PORT; j++)
         {
-            while(read(serialPort[j], &c, 1) > 0)
+            if (serialPort[j] != -1)
             {
-                processChar(c);
+                while(read(serialPort[j], &c, 1) > 0)
+                {
+                    processChar(c);
+                }
             }
         }
         DoSleep(10);
